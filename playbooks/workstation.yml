@@ -1,0 +1,35 @@
+---
+- name: "Provision host"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+
+  tasks:
+
+    - name: "Install packages"
+      ansible.builtin.apt:
+        update_cache: true
+        state: present
+        install_recommends: false
+        purge: true
+        clean: true
+        name:
+          - htop
+          - screen
+          - telnet
+          - unzip
+          - git
+          - curl
+          - zip
+          - ca-certificates
+          - gnupg
+      tags: packages
+
+    - name: Call task aws-cli
+      ansible.builtin.import_tasks: ../tasks/install_awscli.yml
+      tags: awscli
+
+    - name: Call task docker
+      ansible.builtin.import_tasks: ../tasks/install_docker.yml
+      tags: docker

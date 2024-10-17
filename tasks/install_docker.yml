@@ -1,0 +1,21 @@
+---
+- name: "Download docker helper"
+  ansible.builtin.get_url:
+    url: https://get.docker.com
+    dest: /tmp/get-docker.sh
+    mode: '0755'
+    force: true
+  register: result
+  until: "'OK' in result.msg"
+  retries: 5
+  delay: 10
+  tags: docker
+
+- name: "Install Docker"
+  ansible.builtin.shell: |
+    sh ./get-docker.sh
+  args:
+    chdir: "/tmp/"
+  register: output
+  changed_when: output.rc != 0
+  tags: docker

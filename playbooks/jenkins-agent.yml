@@ -1,0 +1,78 @@
+---
+- name: "Provision host"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: true
+
+  tasks:
+
+    - name: "Install packages"
+      ansible.builtin.apt:
+        update_cache: true
+        state: present
+        install_recommends: false
+        purge: true
+        clean: true
+        name:
+          - htop
+          - screen
+          - telnet
+          - vim-tiny
+          - unzip
+          - git
+          - curl
+          - default-jre
+          - zip
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - nfs-common
+      tags: packages
+
+    - name: Call task aws-cli
+      ansible.builtin.import_tasks: ../tasks/install_awscli.yml
+      tags: awscli
+
+    - name: Call task docker
+      ansible.builtin.import_tasks: ../tasks/install_docker.yml
+      tags: docker
+
+    - name: "Get ID of Docker instance"
+      amazon.aws.ec2_instance_info:
+        region: "us-east-1"
+        filters:
+          instance-state-name: [ "running" ]
+          "tag:Name": "jagent-ansible-docker"
+      become: false
+      register: ec2_info
+
+    - name: "Get ID of EIP for Docker instance"
+      community.aws.ec2_eip_info:
+        region: "us-east-1"
+        filters:
+          tag:Name: "i2btech-core-prd-jagent-ansible-docker"
+      become: false
+      register: eip_info
+
+    - name: "Associate EIP with Docker instance"
+      community.aws.ec2_eip:
+        region: "us-east-1"
+        device_id: "{{ ec2_info.instances[0].instance_id }}"
+        public_ip: "{{ eip_info.addresses[0].public_ip }}"
+        allow_reassociation: True
+      become: false
+
+    - name: "Ensure ec2-user exists"
+      ansible.builtin.user:
+        name: ec2-user
+        uid: 1000
+        group: 1000
+        create_home: no
+        non_unique: yes
+
+    - name: "Ensure symlink of home exists"
+      ansible.builtin.file:
+        src: /home/ubuntu
+        dest: /home/ec2-user
+        state: link

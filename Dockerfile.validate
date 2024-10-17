@@ -1,0 +1,9 @@
+FROM i2btech/provision-ubuntu:base
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+COPY --chown=ubuntu:ubuntu --chmod=755 validate.sh /home/ubuntu/validate.sh
+ADD playbooks /home/ubuntu/playbooks
+ADD tasks /home/ubuntu/tasks
+
+RUN /home/ubuntu/validate.sh

@@ -1,0 +1,28 @@
+---
+- name: "Download aws-cli"
+  ansible.builtin.get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: /tmp/awscliv2.zip
+    mode: '0440'
+    force: true
+  register: result
+  until: "'OK' in result.msg"
+  retries: 5
+  delay: 10
+  tags: awscli
+
+- name: Unarchive a file that is already on the remote machine
+  ansible.builtin.unarchive:
+    src: /tmp/awscliv2.zip
+    dest: /tmp
+    remote_src: true
+  tags: awscli
+
+- name: "Install aws-cli"
+  ansible.builtin.shell: |
+    ./install --update
+  args:
+    chdir: "/tmp/aws"
+  register: output
+  changed_when: output.rc != 0
+  tags: awscli

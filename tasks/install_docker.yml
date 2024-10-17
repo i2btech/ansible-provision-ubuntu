@@ -19,3 +19,14 @@
   register: output
   changed_when: output.rc != 0
   tags: docker
+
+- name: "Gather facts"
+  ansible.builtin.gather_facts:
+  register: output
+  become: false
+
+- name: "Add user {{ output.ansible_facts.ansible_user_id }} to group docker"
+  ansible.builtin.user:
+    name: "{{ output.ansible_facts.ansible_user_id }}"
+    groups: docker
+    append: true

@@ -38,31 +38,6 @@
       ansible.builtin.import_tasks: ../tasks/install_docker.yml
       tags: docker
 
-    - name: "Get ID of Docker instance"
-      amazon.aws.ec2_instance_info:
-        region: "us-east-1"
-        filters:
-          instance-state-name: [ "running" ]
-          "tag:Name": "jagent-ansible-docker"
-      become: false
-      register: ec2_info
-
-    - name: "Get ID of EIP for Docker instance"
-      community.aws.ec2_eip_info:
-        region: "us-east-1"
-        filters:
-          tag:Name: "i2btech-core-prd-jagent-ansible-docker"
-      become: false
-      register: eip_info
-
-    - name: "Associate EIP with Docker instance"
-      community.aws.ec2_eip:
-        region: "us-east-1"
-        device_id: "{{ ec2_info.instances[0].instance_id }}"
-        public_ip: "{{ eip_info.addresses[0].public_ip }}"
-        allow_reassociation: True
-      become: false
-
     - name: "Ensure ec2-user exists"
       ansible.builtin.user:
         name: ec2-user
@@ -76,3 +51,33 @@
         src: /home/ubuntu
         dest: /home/ec2-user
         state: link
+
+    - name: "Set EIP"
+      block:
+
+        - name: "Get ID of Docker instance"
+          amazon.aws.ec2_instance_info:
+            region: "us-east-1"
+            filters:
+              instance-state-name: [ "running" ]
+              "tag:Name": "jagent-ansible-docker"
+          become: false
+          register: ec2_info
+
+        - name: "Get ID of EIP for Docker instance"
+          community.aws.ec2_eip_info:
+            region: "us-east-1"
+            filters:
+              tag:Name: "i2btech-core-prd-jagent-ansible-docker"
+          become: false
+          register: eip_info
+
+        - name: "Associate EIP with Docker instance"
+          community.aws.ec2_eip:
+            region: "us-east-1"
+            device_id: "{{ ec2_info.instances[0].instance_id }}"
+            public_ip: "{{ eip_info.addresses[0].public_ip }}"
+            allow_reassociation: True
+          become: false
+
+      tags: [never, eip]

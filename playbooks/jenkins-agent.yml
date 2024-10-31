@@ -7,52 +7,57 @@
 
   tasks:
 
-    - name: "Install packages"
-      ansible.builtin.apt:
-        update_cache: true
-        state: present
-        install_recommends: false
-        purge: true
-        clean: true
-        name:
-          - htop
-          - screen
-          - telnet
-          - vim-tiny
-          - unzip
-          - git
-          - curl
-          - default-jre
-          - zip
-          - ca-certificates
-          - gnupg
-          - lsb-release
-          - nfs-common
-      tags: packages
+    - name: "Build time tasks"
+      block:
 
-    - name: Call task aws-cli
-      ansible.builtin.import_tasks: ../tasks/install_awscli.yml
-      tags: awscli
+        - name: "Install packages"
+          ansible.builtin.apt:
+            update_cache: true
+            state: present
+            install_recommends: false
+            purge: true
+            clean: true
+            name:
+              - htop
+              - screen
+              - telnet
+              - vim-tiny
+              - unzip
+              - git
+              - curl
+              - default-jre
+              - zip
+              - ca-certificates
+              - gnupg
+              - lsb-release
+              - nfs-common
+          tags: packages
 
-    - name: Call task docker
-      ansible.builtin.import_tasks: ../tasks/install_docker.yml
-      tags: docker
+        - name: Call task aws-cli
+          ansible.builtin.import_tasks: ../tasks/install_awscli.yml
+          tags: awscli
 
-    - name: "Ensure ec2-user exists"
-      ansible.builtin.user:
-        name: ec2-user
-        uid: 1000
-        group: 1000
-        create_home: no
-        non_unique: yes
+        - name: Call task docker
+          ansible.builtin.import_tasks: ../tasks/install_docker.yml
+          tags: docker
 
-    - name: "Ensure symlink of home exists"
-      ansible.builtin.file:
-        src: /home/ubuntu
-        dest: /home/ec2-user
-        state: link
+        - name: "Ensure ec2-user exists"
+          ansible.builtin.user:
+            name: ec2-user
+            uid: 1000
+            group: 1000
+            create_home: no
+            non_unique: yes
 
-    - name: "Set EIP"
+        - name: "Ensure symlink of home exists"
+          ansible.builtin.file:
+            src: /home/ubuntu
+            dest: /home/ec2-user
+            state: link
+
+      tags: [never, buildtime]
+
+    - name: "Run time tasks"
       block:
 
         - name: "Get ID of Docker instance"
@@ -80,4 +85,4 @@
             allow_reassociation: True
           become: false
 
-      tags: [never, eip]
+      tags: [never, runtime]

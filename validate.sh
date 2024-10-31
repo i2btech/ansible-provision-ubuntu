@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 sudo DEBIAN_FRONTEND=noninteractive apt update
 sudo DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends python3-pip python3-venv git
